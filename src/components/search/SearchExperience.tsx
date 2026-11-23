@@ -32,11 +32,17 @@ export function SearchExperience() {
   const recent = useRecentSearches();
   const requestRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The query the last finished/started search was for, and the query currently
+  // reflected in the URL. URL-driven re-searches must differ from both, which
+  // makes router.replace-induced reruns converge instead of looping.
+  const lastSearchedRef = useRef<string | null>(null);
+  const urlQueryRef = useRef<string>("");
 
   const runSearch = useCallback(async (q: string, pageNumber: number, append: boolean) => {
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
+    lastSearchedRef.current = q;
     if (append) setLoadingMore(true);
     else setLoading(true);
     setError(null);
@@ -56,7 +62,12 @@ export function SearchExperience() {
       setPage(pageNumber);
       if (!append) {
         addRecentSearch(q);
-        router.replace(`/search/?q=${encodeURIComponent(q)}`, { scroll: false });
+        // Mirror the query into the URL only when it is not already there;
+        // a redundant replace re-enters navigation for nothing.
+        if (urlQueryRef.current !== q) {
+          urlQueryRef.current = q;
+          router.replace(`/search/?q=${encodeURIComponent(q)}`, { scroll: false });
+        }
       }
     } catch (caught) {
       if (controller.signal.aborted) return;
@@ -70,8 +81,18 @@ export function SearchExperience() {
   }, [router]);
 
   useEffect(() => {
+    urlQueryRef.current = initialQuery;
     // Start through a macrotask so no state is set synchronously in the effect body.
-    if (initialQuery) debounceRef.current = setTimeout(() => void runSearch(initialQuery, 0, false), 0);
+    if (initialQuery) {
+      if (lastSearchedRef.current !== initialQuery) {
+        debounceRef.current = setTimeout(() => {
+          setQuery(initialQuery);
+          void runSearch(initialQuery, 0, false);
+        }, 0);
+      }
+    } else {
+      lastSearchedRef.current = null;
+    }
     return () => {
       requestRef.current?.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
