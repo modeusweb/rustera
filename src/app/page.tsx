@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   MagnifyingGlassIcon,
   ArrowDownTrayIcon,
@@ -10,6 +11,20 @@ import { Panel, Disclaimer } from "@/components/ui/primitives";
 import { HomeSearch } from "@/components/search/HomeSearch";
 import { IntegrationStatus } from "@/components/technical/IntegrationStatus";
 import { appDetailHref } from "@/lib/utils/links";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+/** WebSite structured data for search engines. Search itself is noindex, so no SearchAction. */
+const webSiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: MESSAGES.brand.name,
+  alternateName: `${MESSAGES.brand.name} — ${MESSAGES.brand.tagline}`,
+  description: MESSAGES.brand.description,
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://modeusweb.github.io/rustera",
+};
 
 const features = [
   {
@@ -41,6 +56,7 @@ const features = [
 export default function HomePage() {
   return (
     <div className="flex flex-col gap-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }} />
       <section className="relative overflow-hidden rounded-2xl border border-line bg-surface px-6 py-14 sm:px-10 sm:py-20">
         <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-40 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
         <div className="relative flex flex-col gap-6">

@@ -4,6 +4,7 @@ import { HistoryView } from "@/components/downloads/HistoryView";
 export const metadata: Metadata = {
   title: "Download history",
   description: "Review locally stored download metadata from RUSTERA.",
+  alternates: { canonical: "/downloads/" },
   robots: { index: false, follow: false },
 };
 

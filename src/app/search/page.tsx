@@ -6,7 +6,7 @@ import { Spinner } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "Search applications",
   description: "Search the RuStore catalog for Android applications and inspect verified metadata.",
-  alternates: { canonical: "/search" },
+  alternates: { canonical: "/search/" },
   robots: { index: false, follow: true },
 };
 

@@ -4,6 +4,7 @@ import { FavoritesView } from "@/components/favorites/FavoritesView";
 export const metadata: Metadata = {
   title: "Favorites",
   description: "Applications bookmarked in your browser.",
+  alternates: { canonical: "/favorites/" },
   robots: { index: false, follow: false },
 };
 

@@ -5,7 +5,10 @@ import { Footer } from "@/components/layout/Footer";
 import { HydrationMarker } from "@/components/layout/HydrationMarker";
 import { MESSAGES } from "@/lib/constants/messages";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://modeusweb.github.io/rustera";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+// Resolved against metadataBase, which already contains the Pages sub-path.
+const ogImage = "/images/og.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -16,19 +19,28 @@ export const metadata: Metadata = {
   description: MESSAGES.brand.description,
   applicationName: MESSAGES.brand.name,
   robots: { index: true, follow: true },
+  icons: {
+    icon: [
+      { url: `${basePath}/favicon.ico`, sizes: "48x48", type: "image/x-icon" },
+      { url: `${basePath}/icon.svg`, type: "image/svg+xml" },
+    ],
+    apple: [{ url: `${basePath}/apple-icon.png`, sizes: "180x180", type: "image/png" }],
+  },
   openGraph: {
     type: "website",
     siteName: MESSAGES.brand.name,
     title: `${MESSAGES.brand.name} — ${MESSAGES.brand.tagline}`,
     description: MESSAGES.brand.description,
     url: siteUrl,
+    locale: "en_US",
+    images: [{ url: ogImage, width: 1200, height: 630, alt: `${MESSAGES.brand.name} — ${MESSAGES.brand.tagline}` }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${MESSAGES.brand.name} — ${MESSAGES.brand.tagline}`,
     description: MESSAGES.brand.description,
+    images: [ogImage],
   },
-  alternates: { canonical: "/" },
 };
 
 export const viewport: Viewport = {

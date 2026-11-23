@@ -4,7 +4,7 @@ import { Panel } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "Privacy policy",
   description: "How RUSTERA handles local data and upstream requests.",
-  alternates: { canonical: "/privacy" },
+  alternates: { canonical: "/privacy/" },
   robots: { index: false, follow: true },
 };
 

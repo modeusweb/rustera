@@ -5,7 +5,7 @@ import { Panel } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "About",
   description: "About RUSTERA, its approach to RuStore data and its limitations.",
-  alternates: { canonical: "/about" },
+  alternates: { canonical: "/about/" },
 };
 
 const sections = [

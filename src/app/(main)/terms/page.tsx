@@ -4,7 +4,7 @@ import { Panel } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "Terms of use",
   description: "Terms governing the use of RUSTERA.",
-  alternates: { canonical: "/terms" },
+  alternates: { canonical: "/terms/" },
   robots: { index: false, follow: true },
 };
 

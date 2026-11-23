@@ -4,6 +4,7 @@ import { CompareView } from "@/components/technical/CompareView";
 export const metadata: Metadata = {
   title: "Compare applications",
   description: "Compare verified Android application metadata side by side.",
+  alternates: { canonical: "/compare/" },
   robots: { index: false, follow: false },
 };
 
