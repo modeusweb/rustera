@@ -14,7 +14,7 @@ import { Screenshots } from "@/components/applications/Screenshots";
 import { CompatibilityPanel, TechnicalPanel } from "@/components/technical/TechnicalPanel";
 import { Badge, EmptyState, Field, Panel, Spinner } from "@/components/ui/primitives";
 import { MESSAGES } from "@/lib/constants/messages";
-import { formatApproxCount, formatDate } from "@/lib/formatting/format";
+import { formatCompactCount, formatDate } from "@/lib/formatting/format";
 
 export function AppDetailClient({ packageName }: { packageName: string }) {
   const [app, setApp] = useState<AppDetails | null>(null);
@@ -93,8 +93,8 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
               {app.versionName && <span>{MESSAGES.app.version}: {app.versionName}</span>}
               {app.fileSizeBytes && <span>{MESSAGES.app.size}: {(app.fileSizeBytes / 1048576).toFixed(1)} MB</span>}
               {app.downloads !== null && (
-                <span title="Approximate count reported by RuStore">
-                  {MESSAGES.app.downloads}: {formatApproxCount(app.downloads)}
+                <span title="Rounded total reported by RuStore">
+                  {MESSAGES.app.downloads}: {formatCompactCount(app.downloads)}
                 </span>
               )}
               {app.rating !== null && <span>Rating: {app.rating.toFixed(1)}</span>}
