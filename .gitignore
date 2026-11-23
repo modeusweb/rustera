@@ -1,0 +1,49 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+
+# next.js
+/.next/
+/out/
+/build
+
+# production
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+
+# env
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# research artifacts (reference repos, probes, captured HTML)
+.ref-*/
+.probe*.mjs
+.ref-*.json
+.ref-*.html
+
+# editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
