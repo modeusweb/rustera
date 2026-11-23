@@ -27,6 +27,16 @@ export function formatCount(value: number | null | undefined): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
+/**
+ * RuStore reports download totals rounded (an upstream "30 mln +" listing is
+ * returned as the number 30,000,000), so a numeric total is always an
+ * approximation and must be presented as one.
+ */
+export function formatApproxCount(value: number | null | undefined): string {
+  const formatted = formatCount(value);
+  return formatted === "Not available" ? formatted : `≈ ${formatted}`;
+}
+
 export function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, max - 1).trimEnd()}…`;
 }

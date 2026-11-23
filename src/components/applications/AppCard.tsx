@@ -59,7 +59,9 @@ export function AppCard({ app }: { app: AppSummary }) {
               {app.ratingVotes !== null && ` (${formatCount(app.ratingVotes)})`}
             </span>
           )}
-          {app.downloadsText && <span>{app.downloadsText}</span>}
+          {app.downloadsText && (
+            <span title="Approximate count reported by RuStore">≈ {app.downloadsText}</span>
+          )}
         </div>
       </div>
 
