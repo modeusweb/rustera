@@ -11,16 +11,11 @@ import {
 import type { AppScreenshot } from "@/types/domain";
 
 /** Accessible image lightbox: no download link, keyboard navigation, focus return. */
-export function ScreenshotGallery({
-  items,
-  appName,
-}: {
-  items: AppScreenshot[];
-  appName: string;
-}) {
+export function ScreenshotGallery({ items, appName }: { items: AppScreenshot[]; appName: string }) {
   const [index, setIndex] = useState<number | null>(null);
   const [fullFailed, setFullFailed] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
   const open = useCallback((next: number, trigger: HTMLElement) => {
@@ -34,16 +29,21 @@ export function ScreenshotGallery({
     triggerRef.current?.focus();
   }, []);
 
-  const step = useCallback((delta: number) => {
-    setIndex((current) => {
-      if (current === null) return current;
-      return (current + delta + items.length) % items.length;
-    });
-    setFullFailed(false);
-  }, [items.length]);
+  const step = useCallback(
+    (delta: number) => {
+      setIndex((current) => {
+        if (current === null) return current;
+        return (current + delta + items.length) % items.length;
+      });
+      setFullFailed(false);
+    },
+    [items.length],
+  );
+
+  const isOpen = index !== null;
 
   useEffect(() => {
-    if (index === null) return;
+    if (!isOpen) return;
     closeRef.current?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -52,6 +52,20 @@ export function ScreenshotGallery({
       if (event.key === "Escape") close();
       if (event.key === "ArrowRight") step(1);
       if (event.key === "ArrowLeft") step(-1);
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]"),
+      ).filter((element) => element.offsetParent !== null);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener("keydown", onKeyDown);
 
@@ -59,7 +73,7 @@ export function ScreenshotGallery({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [index, close, step]);
+  }, [isOpen, close, step]);
 
   const current = index === null ? null : items[index];
 
@@ -93,6 +107,7 @@ export function ScreenshotGallery({
           role="presentation"
         >
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={`${appName} screenshots`}

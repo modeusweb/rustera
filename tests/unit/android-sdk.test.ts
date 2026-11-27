@@ -9,7 +9,6 @@ describe("mapAndroidSdk", () => {
     [32, "Android 12L (API 32)"],
     [35, "Android 15 (API 35)"],
     [36, "Android 16 (API 36)"],
-    [37, "Android 17 (API 37)"],
   ])("maps API %i to %s", (level, expected) => {
     expect(mapAndroidSdk(level).label).toBe(expected);
   });
@@ -21,6 +20,8 @@ describe("mapAndroidSdk", () => {
     expect(mapAndroidSdk(1.5).label).toBe("Unknown");
     expect(mapAndroidSdk(1234).label).toBe("API 1234");
     expect(mapAndroidSdk(1234).known).toBe(false);
+    expect(mapAndroidSdk(37).label).toBe("API 37");
+    expect(mapAndroidSdk(37).known).toBe(false);
   });
 
   it("normalizes upstream Android version strings", () => {

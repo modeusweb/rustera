@@ -12,32 +12,49 @@ import {
   downloadV3Schema,
   searchResponseSchema,
 } from "./schemas";
-import {
-  normalizeAppDetails,
-  normalizeDownload,
-  normalizeSearchResponse,
-} from "./normalizers";
+import { normalizeAppDetails, normalizeDownload, normalizeSearchResponse } from "./normalizers";
 import { validateDownloadUrl } from "./download-url";
+import { pageNumberSchema, pageSizeSchema, searchQuerySchema } from "@/lib/validation/input";
 
 const API_BASE = "https://backapi.rustore.ru";
 const VERSION_CODE = process.env.NEXT_PUBLIC_RUSTORE_VERSION_CODE ?? "1105001";
+const REQUEST_TIMEOUT_MS = 10_000;
+
+/** Keeps caller cancellation while bounding every request, including stalled bodies. */
+function requestSignal(external?: AbortSignal | null): AbortSignal {
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  return external ? AbortSignal.any([external, timeout]) : timeout;
+}
 
 async function request(path: string, init: RequestInit = {}): Promise<unknown> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (VERSION_CODE) headers.set("ruStoreVerCode", VERSION_CODE);
+  const signal = requestSignal(init.signal);
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}${path}`, { ...init, headers, cache: "no-store" });
-  } catch {
+    response = await fetch(`${API_BASE}${path}`, { ...init, headers, cache: "no-store", signal });
+  } catch (error) {
+    if (init.signal?.aborted) throw error;
     throw new RuStoreError({
       code: "UPSTREAM_UNAVAILABLE",
-      message: "The application catalog is temporarily unavailable.",
+      message: "The application catalog is temporarily unavailable or timed out.",
+      retryable: true,
     });
   }
 
-  const text = await response.text();
+  let text: string;
+  try {
+    text = await response.text();
+  } catch (error) {
+    if (init.signal?.aborted) throw error;
+    throw new RuStoreError({
+      code: "UPSTREAM_UNAVAILABLE",
+      message: "The application catalog response was interrupted.",
+      retryable: true,
+    });
+  }
   if (!text) {
     throw new RuStoreError({
       code: "UPSTREAM_UNAVAILABLE",
@@ -59,7 +76,10 @@ async function request(path: string, init: RequestInit = {}): Promise<unknown> {
 
   if (!response.ok) {
     const message =
-      typeof data === "object" && data !== null && "message" in data && typeof data.message === "string"
+      typeof data === "object" &&
+      data !== null &&
+      "message" in data &&
+      typeof data.message === "string"
         ? data.message
         : "";
     if (/find required data|not found|does not match the required format/i.test(message)) {
@@ -77,6 +97,7 @@ async function request(path: string, init: RequestInit = {}): Promise<unknown> {
           ? "The catalog is receiving too many requests. Please wait a moment and retry."
           : "The application catalog is temporarily unavailable.",
       status: response.status,
+      retryable: response.status === 429 || response.status >= 500,
     });
   }
 
@@ -111,12 +132,22 @@ export async function searchCatalogClient(input: {
   pageSize?: number;
   signal?: AbortSignal;
 }): Promise<SearchResultPage> {
+  const queryResult = searchQuerySchema.safeParse(input.query);
+  if (!queryResult.success) {
+    throw new RuStoreError({
+      code: "INVALID_INPUT",
+      message: queryResult.error.issues[0]?.message ?? "Enter a valid search query.",
+      kind: "business",
+    });
+  }
+  const page = pageNumberSchema.parse(input.page ?? 0);
+  const pageSize = pageSizeSchema.parse(input.pageSize ?? 20);
   const params = new URLSearchParams({
-    pageNumber: String(input.page ?? 0),
-    pageSize: String(input.pageSize ?? 20),
-    query: input.query,
+    pageNumber: String(page),
+    pageSize: String(pageSize),
+    query: queryResult.data,
   });
-  const raw = await request(`/applicationData/apps?${params}`, { signal: input.signal });
+  const raw = unwrap(await request(`/applicationData/apps?${params}`, { signal: input.signal }));
   const parsed = searchResponseSchema.safeParse(raw);
   if (!parsed.success) {
     throw new RuStoreError({
@@ -176,7 +207,12 @@ export async function getAppDetailsClient(
   return normalizeAppDetails(parsed.data);
 }
 
-async function post(path: string, body: unknown, signal?: AbortSignal): Promise<unknown | null> {
+async function post(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+  onTransportError?: (error: RuStoreError) => void,
+): Promise<unknown | null> {
   try {
     return await request(path, {
       method: "POST",
@@ -184,7 +220,13 @@ async function post(path: string, body: unknown, signal?: AbortSignal): Promise<
       body: JSON.stringify(body),
       signal,
     });
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    // A 404 on every version still means "nothing to download"; only outages
+    // and rate limits deserve a transport error with a retry.
+    if (error instanceof RuStoreError && error.kind === "transport" && error.retryable) {
+      onTransportError?.(error);
+    }
     return null;
   }
 }
@@ -214,7 +256,12 @@ export async function resolveDownloadClient(
     withoutSplits: false,
   };
 
-  const v3 = await post("/v3/showcase/apps/download-link", device, signal);
+  const transportFailure: { error: RuStoreError | null } = { error: null };
+  const rememberTransportError = (error: RuStoreError) => {
+    transportFailure.error = error;
+  };
+
+  const v3 = await post("/v3/showcase/apps/download-link", device, signal, rememberTransportError);
   if (v3 && typeof v3 === "object" && "downloadUrls" in v3) {
     const parsed = downloadV3Schema.safeParse(v3);
     if (parsed.success && parsed.data.downloadUrls.length > 0) {
@@ -227,7 +274,12 @@ export async function resolveDownloadClient(
     }
   }
 
-  const v2 = await post("/applicationData/v2/download-link", device, signal);
+  const v2 = await post(
+    "/applicationData/v2/download-link",
+    device,
+    signal,
+    rememberTransportError,
+  );
   if (v2 !== null) {
     const parsed = downloadV2Schema.safeParse(v2);
     if (parsed.success && parsed.data.code === "OK" && parsed.data.body.downloadUrls.length > 0) {
@@ -244,6 +296,7 @@ export async function resolveDownloadClient(
     "/applicationData/download-link",
     { appId: details.appId, firstInstall: true },
     signal,
+    rememberTransportError,
   );
   if (v1 !== null) {
     const parsed = downloadV1Schema.safeParse(v1);
@@ -257,16 +310,21 @@ export async function resolveDownloadClient(
     }
   }
 
+  // Transport failures must not be reported as a missing file: the user can
+  // retry a rate limit or outage, but there is nothing to retry in the latter case.
+  if (transportFailure.error) throw transportFailure.error;
+
   throw new RuStoreError({
     code: "DOWNLOAD_UNAVAILABLE",
-    message: "No downloadable file is available for this release. The app may be distributed externally.",
+    message:
+      "No downloadable file is available for this release. The app may be distributed externally.",
     kind: "business",
     status: 404,
   });
 }
 
 /** Validates every resolved URL before the browser is allowed to follow it. */
-export function validatedDownloadUrl(resolution: DownloadResolution): string {
+export function validatedDownloadUrls(resolution: DownloadResolution): string[] {
   if (resolution.urls.length === 0) {
     throw new RuStoreError({
       code: "DOWNLOAD_UNAVAILABLE",
@@ -274,5 +332,5 @@ export function validatedDownloadUrl(resolution: DownloadResolution): string {
       kind: "business",
     });
   }
-  return validateDownloadUrl(resolution.urls[0]!.url).toString();
+  return resolution.urls.map((item) => validateDownloadUrl(item.url).toString());
 }

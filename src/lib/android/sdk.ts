@@ -58,10 +58,9 @@ export function mapAndroidSdk(level: number | null | undefined): AndroidVersionI
     return { apiLevel: 0, versionName: null, label: "Unknown", known: false };
   }
 
-  // Future API levels can be extrapolated for a bounded range; beyond that,
-  // refuse to guess and expose only the raw API level.
-  const versionName =
-    NAMED_LEVELS[level] ?? (level >= 37 && level <= 100 ? String(level - 20) : null);
+  // Never extrapolate a future Android version from the API level: upstream
+  // names are not derivable and a wrong label is worse than no label.
+  const versionName = NAMED_LEVELS[level] ?? null;
 
   if (versionName === null) {
     return { apiLevel: level, versionName: null, label: `API ${level}`, known: false };

@@ -6,14 +6,14 @@ This document records the **verified** behaviour of the RuStore backend integrat
 
 The reference project (`k7361/rustore-downloader`) is a static single-page application. It proxied `/api/*` to `https://backapi.rustore.ru` with Vercel rewrites, which meant the real upstream paths were **without** the `/api` prefix. Its requests were:
 
-| Purpose | Method | Upstream path |
-| --- | --- | --- |
-| Search | `GET` | `/applicationData/apps?pageNumber=0&pageSize=20&query=…` |
-| App details | `GET` | `/applicationData/overallInfo/{packageName}` |
-| Version history | `GET` | `/applicationData/allAppVersionWhatsNew/{appId}` |
-| Comments | `GET` | `/comment/comment?...` |
-| Download link (primary) | `POST` | `/v3/showcase/apps/download-link` |
-| Download link (fallback) | `POST` | `/applicationData/v2/download-link` |
+| Purpose                  | Method | Upstream path                                            |
+| ------------------------ | ------ | -------------------------------------------------------- |
+| Search                   | `GET`  | `/applicationData/apps?pageNumber=0&pageSize=20&query=…` |
+| App details              | `GET`  | `/applicationData/overallInfo/{packageName}`             |
+| Version history          | `GET`  | `/applicationData/allAppVersionWhatsNew/{appId}`         |
+| Comments                 | `GET`  | `/comment/comment?...`                                   |
+| Download link (primary)  | `POST` | `/v3/showcase/apps/download-link`                        |
+| Download link (fallback) | `POST` | `/applicationData/v2/download-link`                      |
 
 Special header: `ruStoreVerCode: 1105001` on details and download requests; `deviceType: mobile|tv` on search/details.
 
@@ -100,17 +100,17 @@ The `v2` variant wraps the same payload in `{ code, body }` and adds `signature`
 
 ## 4. Compatibility header policy
 
-`ruStoreVerCode` is isolated in configuration (`RUSTORE_VERSION_CODE`, default `1105001`) and documented here. It is a compatibility identifier observed in the reference client, not a secret and not an authentication bypass. It can be changed or removed through environment variables if upstream behavior changes.
+`ruStoreVerCode` is isolated in configuration (`NEXT_PUBLIC_RUSTORE_VERSION_CODE`, default `1105001`) and documented here. It is a compatibility identifier observed in the reference client, not a secret and not an authentication bypass. It can be changed or removed through environment variables if upstream behavior changes.
 
 ## 5. Download delivery policy
 
-RUSTERA resolves the signed URL server-side and then **redirects the browser** to the original `static-m.rustore.ru` / `static.rustore.ru` URL. The APK bytes never pass through the application server. This avoids buffering, serverless response-size limits and unnecessary bandwidth cost. The resolved URL is validated before redirect: HTTPS only, allow-listed hosts, no credentials, no private/loopback/link-local targets. Redirects are not followed server-side, so there is no redirect hop to revalidate.
+RUSTERA resolves the signed URL **in the browser** and links directly to the original `static-m.rustore.ru` / `static.rustore.ru` URL. No server or proxy is involved, so APK bytes never pass through application infrastructure and there is no server-side redirect to revalidate. Every returned URL is validated before it is exposed as a link: HTTPS only, allow-listed hosts, no credentials, non-standard port, IP literal, CRLF or NUL characters. Signed URLs are never persisted in history.
 
-A streaming proxy would be technically possible but is intentionally **not** implemented: it would conflict with the selected serverless deployment target and provide no benefit for original-file delivery.
+A streaming proxy is intentionally **not** implemented: it would require a server, add bandwidth cost and provide no benefit for original-file delivery.
 
 ## 6. How to replace or update the adapter
 
-1. Change upstream paths/schemas in `src/server/providers/rustore/endpoints.ts` and `schemas.ts`.
-2. Update normalization in `normalizers.ts`; the domain models in `src/types/domain.ts` must not change because of an upstream field rename.
-3. Re-run `npm run test:integration` with the MSW fixtures in `tests/integration`.
+1. Change upstream paths and schemas in `src/lib/rustore/client-api.ts` and `src/lib/rustore/schemas.ts`.
+2. Update normalization in `src/lib/rustore/normalizers.ts`; the domain models in `src/types/domain.ts` must not change because of an upstream field rename.
+3. Re-run `npm run test:unit` and `npm run test:e2e`. E2E fixtures live in `tests/e2e/fixtures.ts`; upstream requests are mocked there, so CI does not depend on RuStore availability.
 4. Update this document with the new verification date and findings.

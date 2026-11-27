@@ -11,7 +11,10 @@ function mockUpstream(route: Route): unknown {
   }
   if (url.includes("/applicationData/overallInfo/")) {
     if (url.endsWith("/not-a-package")) {
-      return route.fulfill({ status: 404, json: { code: "ERROR", message: "Can't find required data" } });
+      return route.fulfill({
+        status: 404,
+        json: { code: "ERROR", message: "Can't find required data" },
+      });
     }
     return route.fulfill({ json: detailsFixture });
   }
@@ -117,6 +120,55 @@ test("theme switching works", async ({ page }) => {
   await expect.poll(background).not.toBe(before);
   await toggle.click();
   await expect.poll(background).toBe(before);
+});
+
+test("saved dark theme is applied before hydration on cold reload", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  await page.evaluate(() => localStorage.setItem("rustera:theme", "dark"));
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveClass(/theme-dark/);
+  await expect
+    .poll(() =>
+      page.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor),
+    )
+    .toBe("rgb(11, 13, 17)");
+});
+
+test("split bundles link each file to its own URL", async ({ page }) => {
+  await page.route("**/backapi.rustore.ru/**", (route) => {
+    if (route.request().url().includes("/download-link")) {
+      return route.fulfill({
+        json: {
+          ...downloadV3Fixture,
+          downloadUrls: [
+            { url: "https://static-m.rustore.ru/2026/11/21/first.apk", size: 10, hash: null },
+            { url: "https://static.rustore.ru/2026/11/21/second.zip", size: 20, hash: null },
+          ],
+        },
+      });
+    }
+    return mockUpstream(route);
+  });
+  await page.goto("/app/?p=org.telegram.messenger.web");
+  await hydrated(page);
+  await page.getByRole("button", { name: "Get download link" }).click();
+  await expect(page.getByText("Original file link ready")).toBeVisible();
+  const links = page.locator('#download a[target="_blank"]');
+  await expect(links).toHaveCount(2);
+  expect(await links.nth(0).getAttribute("href")).toContain("first.apk");
+  expect(await links.nth(1).getAttribute("href")).toContain("second.zip");
+});
+
+test("mobile menu closes on Escape and restores focus", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const toggle = page.getByRole("button", { name: /navigation menu/i });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toBeFocused();
 });
 
 test("mobile navigation works", async ({ page }) => {

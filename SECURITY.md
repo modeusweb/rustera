@@ -13,7 +13,7 @@ Include:
 - affected route or component,
 - steps to reproduce,
 - impact assessment,
-- request ID where applicable.
+- browser and environment (the app has no server-side request IDs).
 
 **Never include signed download URLs, tokens or credentials in a report.** Redact query strings from RuStore CDN URLs.
 
@@ -23,4 +23,4 @@ You should receive an acknowledgement within a reasonable period. Fixes are prio
 
 ## Scope
 
-RUSTERA itself: Next.js application code, API route handlers, provider adapter, validation, security headers and client storage. Vulnerabilities in RuStore's own service or in Android applications distributed through it are out of scope and should be reported to their respective owners.
+RUSTERA itself: the statically exported Next.js application, provider adapter, validation, download URL checks and client storage. Hosting-level HTTP headers are out of scope. Vulnerabilities in RuStore's own service or in Android applications distributed through it are out of scope and should be reported to their respective owners.

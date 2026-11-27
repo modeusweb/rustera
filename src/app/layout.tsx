@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HydrationMarker } from "@/components/layout/HydrationMarker";
 import { MESSAGES } from "@/lib/constants/messages";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/constants/theme";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://modeusweb.github.io/rustera";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -33,7 +34,14 @@ export const metadata: Metadata = {
     description: MESSAGES.brand.description,
     url: siteUrl,
     locale: "en_US",
-    images: [{ url: ogImage, width: 1200, height: 630, alt: `${MESSAGES.brand.name} — ${MESSAGES.brand.tagline}` }],
+    images: [
+      {
+        url: ogImage,
+        width: 1200,
+        height: 630,
+        alt: `${MESSAGES.brand.name} — ${MESSAGES.brand.tagline}`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -55,6 +63,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body className="min-h-screen">
         <a
           href="#main-content"
@@ -64,7 +75,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         <Header />
         <HydrationMarker />
-        <main id="main-content" className="mx-auto min-h-[60vh] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main
+          id="main-content"
+          className="mx-auto min-h-[60vh] max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        >
           {children}
         </main>
         <Footer />

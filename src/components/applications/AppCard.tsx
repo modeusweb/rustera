@@ -26,7 +26,11 @@ export function AppCard({ app }: { app: AppSummary }) {
 
   return (
     <article className="panel flex flex-col gap-4 p-4 transition-colors hover:border-line-strong sm:flex-row">
-      <Link href={detailHref} className="shrink-0" aria-label={`${MESSAGES.app.openDetails}: ${app.name}`}>
+      <Link
+        href={detailHref}
+        className="shrink-0"
+        aria-label={`${MESSAGES.app.openDetails}: ${app.name}`}
+      >
         <AppIcon src={app.iconUrl} alt={app.name} size={72} />
       </Link>
 
@@ -34,9 +38,13 @@ export function AppCard({ app }: { app: AppSummary }) {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold text-fg">
-              <Link href={detailHref} className="hover:text-accent">{app.name}</Link>
+              <Link href={detailHref} className="hover:text-accent">
+                {app.name}
+              </Link>
             </h3>
-            <p className="truncate text-xs text-muted" title={app.packageName}>{app.packageName}</p>
+            <p className="truncate text-xs text-muted" title={app.packageName}>
+              {app.packageName}
+            </p>
           </div>
           {app.price !== null && app.price > 0 && <Badge tone="warning">Paid</Badge>}
         </div>
@@ -68,6 +76,7 @@ export function AppCard({ app }: { app: AppSummary }) {
       <div className="flex shrink-0 items-end sm:flex-col sm:items-stretch sm:justify-center">
         <Link
           href={`${detailHref}#download`}
+          aria-label={`${MESSAGES.app.download}: ${app.name}`}
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hover"
         >
           <ArrowDownTrayIcon aria-hidden="true" className="h-4 w-4" />

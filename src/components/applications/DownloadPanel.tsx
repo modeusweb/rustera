@@ -10,7 +10,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import type { DownloadResolution } from "@/types/domain";
-import { resolveDownloadClient, validatedDownloadUrl } from "@/lib/rustore/client-api";
+import { resolveDownloadClient, validatedDownloadUrls } from "@/lib/rustore/client-api";
 import { toPublicError } from "@/lib/rustore/errors";
 import { MESSAGES } from "@/lib/constants/messages";
 import { formatBytes } from "@/lib/formatting/format";
@@ -28,7 +28,7 @@ interface Props {
 type State =
   | { phase: "idle" }
   | { phase: "loading" }
-  | { phase: "ready"; data: DownloadResolution; href: string }
+  | { phase: "ready"; data: DownloadResolution; hrefs: string[] }
   | { phase: "error"; message: string };
 
 export function DownloadPanel({ packageName, appName, versionName, versionCode, disabled }: Props) {
@@ -39,8 +39,8 @@ export function DownloadPanel({ packageName, appName, versionName, versionCode, 
     try {
       const data = await resolveDownloadClient(packageName);
       if (!data.urls.length) throw new Error(MESSAGES.errors.noDownload);
-      const href = validatedDownloadUrl(data);
-      setState({ phase: "ready", data, href });
+      const hrefs = validatedDownloadUrls(data);
+      setState({ phase: "ready", data, hrefs });
       const primary = data.urls[0];
       if (primary) {
         addHistoryEntry({
@@ -68,12 +68,22 @@ export function DownloadPanel({ packageName, appName, versionName, versionCode, 
   }
 
   if (disabled) {
-    return <StatusMessage tone="warning">{disabled}</StatusMessage>;
+    // Keep the anchor target used by search cards even when no download is offered.
+    return (
+      <section id="download" aria-labelledby="download-heading">
+        <h2 id="download-heading" className="sr-only">
+          {MESSAGES.download.title}
+        </h2>
+        <StatusMessage tone="warning">{disabled}</StatusMessage>
+      </section>
+    );
   }
 
   return (
     <section id="download" aria-labelledby="download-heading" className="flex flex-col gap-4">
-      <h2 id="download-heading" className="text-base font-semibold text-fg">{MESSAGES.download.title}</h2>
+      <h2 id="download-heading" className="text-base font-semibold text-fg">
+        {MESSAGES.download.title}
+      </h2>
 
       {state.phase === "idle" && (
         <>
@@ -82,8 +92,8 @@ export function DownloadPanel({ packageName, appName, versionName, versionCode, 
             {MESSAGES.app.download}
           </Button>
           <p className="text-xs leading-relaxed text-muted">
-            A fresh, signed URL is resolved each time. RUSTERA redirects you to the original RuStore file; it does not
-            proxy or modify APK bytes.
+            A fresh, signed URL is resolved each time. RUSTERA redirects you to the original RuStore
+            file; it does not proxy or modify APK bytes.
           </p>
         </>
       )}
@@ -97,7 +107,10 @@ export function DownloadPanel({ packageName, appName, versionName, versionCode, 
       {state.phase === "error" && (
         <div className="flex flex-col gap-3">
           <StatusMessage tone="error">{state.message}</StatusMessage>
-          <Button onClick={() => void resolve()}><ArrowPathIcon aria-hidden="true" className="h-4 w-4" />{MESSAGES.download.retry}</Button>
+          <Button onClick={() => void resolve()}>
+            <ArrowPathIcon aria-hidden="true" className="h-4 w-4" />
+            {MESSAGES.download.retry}
+          </Button>
         </div>
       )}
 
@@ -111,21 +124,30 @@ export function DownloadPanel({ packageName, appName, versionName, versionCode, 
           </StatusMessage>
 
           <ul className="flex flex-col gap-3">
-            {state.data.urls.map((item) => (
-              <li key={item.url} className="panel-raised flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            {state.data.urls.map((item, index) => (
+              <li
+                key={item.url}
+                className="panel-raised flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="flex min-w-0 flex-col gap-1 text-sm">
-                  <span className="truncate font-medium text-fg" title={item.fileName}>{item.fileName}</span>
+                  <span className="truncate font-medium text-fg" title={item.fileName}>
+                    {item.fileName}
+                  </span>
                   <span className="text-xs text-muted">
-                    {formatBytes(item.sizeBytes)} · {item.contentType} · {new URL(item.url).hostname}
+                    {formatBytes(item.sizeBytes)} · {item.contentType} ·{" "}
+                    {new URL(item.url).hostname}
                   </span>
                   {item.upstreamDigest && (
-                    <span className="text-xs text-muted">{MESSAGES.download.digest}: {item.upstreamDigest}</span>
+                    <span className="text-xs text-muted">
+                      {MESSAGES.download.digest}: {item.upstreamDigest}
+                    </span>
                   )}
                 </div>
                 <a
-                  href={state.href}
+                  href={state.hrefs[index]}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`${MESSAGES.download.openFile}: ${item.fileName}`}
                   className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent-hover"
                 >
                   <ArrowTopRightOnSquareIcon aria-hidden="true" className="h-4 w-4" />
@@ -145,7 +167,10 @@ export function DownloadPanel({ packageName, appName, versionName, versionCode, 
               <ArrowPathIcon aria-hidden="true" className="h-4 w-4" />
               {MESSAGES.download.retry}
             </Button>
-            <Link href="/downloads" className="inline-flex items-center text-accent hover:underline">
+            <Link
+              href="/downloads"
+              className="inline-flex items-center text-accent hover:underline"
+            >
               {MESSAGES.download.history}
             </Link>
           </div>

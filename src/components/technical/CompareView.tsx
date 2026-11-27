@@ -78,18 +78,29 @@ export function CompareView() {
           <Button
             key={app.packageName}
             variant="ghost"
-            onClick={() => setComparison((current) => current.filter((item) => item.packageName !== app.packageName))}
+            aria-label={`Remove ${app.name} from comparison`}
+            onClick={() =>
+              setComparison((current) =>
+                current.filter((item) => item.packageName !== app.packageName),
+              )
+            }
           >
             {app.name} <span aria-hidden="true">×</span>
           </Button>
         ))}
-        <Button variant="danger" onClick={() => setComparison([])}>Clear all</Button>
+        <Button variant="danger" onClick={() => setComparison([])}>
+          Clear all
+        </Button>
       </div>
 
       {loading ? <Spinner label="Loading technical metadata…" /> : null}
 
       {!loading && details.length === 0 ? (
-        <EmptyState title="Details unavailable" body="None of the selected applications could be loaded. Try again later." icon="warning" />
+        <EmptyState
+          title="Details unavailable"
+          body="None of the selected applications could be loaded. Try again later."
+          icon="warning"
+        />
       ) : null}
 
       {!loading && details.length > 0 && (
@@ -101,14 +112,22 @@ export function CompareView() {
                   Property
                 </th>
                 {details.map((app) => (
-                  <th key={app.packageName} className="border-b border-l border-line px-4 py-4 text-left">
+                  <th
+                    key={app.packageName}
+                    className="border-b border-l border-line px-4 py-4 text-left"
+                  >
                     <div className="flex items-center gap-3">
                       <AppIcon src={app.iconUrl} alt={app.name} size={40} />
                       <div className="min-w-0">
-                        <Link href={appDetailHref(app.packageName)} className="block truncate font-semibold text-fg hover:text-accent">
+                        <Link
+                          href={appDetailHref(app.packageName)}
+                          className="block truncate font-semibold text-fg hover:text-accent"
+                        >
                           {app.name}
                         </Link>
-                        <span className="block truncate font-mono text-xs text-muted">{app.packageName}</span>
+                        <span className="block truncate font-mono text-xs text-muted">
+                          {app.packageName}
+                        </span>
                       </div>
                     </div>
                   </th>
@@ -121,7 +140,10 @@ export function CompareView() {
                 const differs = new Set(values).size > 1;
                 return (
                   <tr key={column.label} className={differs ? "bg-accent/[0.04]" : undefined}>
-                    <th scope="row" className="border-b border-line px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted">
+                    <th
+                      scope="row"
+                      className="border-b border-line px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted"
+                    >
                       {column.label}
                     </th>
                     {values.map((value, index) => (
@@ -139,7 +161,10 @@ export function CompareView() {
           </table>
         </Panel>
       )}
-      <p className="text-xs text-muted">Rows highlighted in violet differ between the selected applications. Unavailable values are never inferred.</p>
+      <p className="text-xs text-muted">
+        Rows highlighted in violet differ between the selected applications. Unavailable values are
+        never inferred.
+      </p>
     </div>
   );
 }

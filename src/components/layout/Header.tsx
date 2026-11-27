@@ -1,13 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Bars3Icon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { Bars3Icon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 // XMarkIcon is used for both the mobile menu and the search clear control.
 import { MESSAGES } from "@/lib/constants/messages";
 import { ThemeToggle } from "./ThemeToggle";
@@ -26,6 +22,18 @@ export function Header() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButtonRef.current?.focus();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -38,15 +46,30 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label={`${MESSAGES.brand.name} — ${MESSAGES.nav.home}`}>
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2.5"
+          aria-label={`${MESSAGES.brand.name} — ${MESSAGES.nav.home}`}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/icons/rustera-mark.svg`} alt="" width={30} height={30} className="rounded-md" />
-          <span className="text-base font-bold tracking-[0.18em] text-fg">{MESSAGES.brand.name}</span>
+          <img
+            src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/icons/rustera-mark.svg`}
+            alt=""
+            width={30}
+            height={30}
+            className="rounded-md"
+          />
+          <span className="text-base font-bold tracking-[0.18em] text-fg">
+            {MESSAGES.brand.name}
+          </span>
         </Link>
 
         <form onSubmit={submit} role="search" className="ml-auto hidden w-full max-w-xs md:block">
           <div className="relative">
-            <MagnifyingGlassIcon aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <MagnifyingGlassIcon
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            />
             <input
               type="search"
               value={query}
@@ -89,14 +112,19 @@ export function Header() {
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
           <ThemeToggle />
           <button
+            ref={menuButtonRef}
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
-            aria-controls="mobile-navigation"
+            aria-controls={menuOpen ? "mobile-navigation" : undefined}
             aria-label={menuOpen ? MESSAGES.nav.closeMenu : MESSAGES.nav.openMenu}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-line text-muted hover:bg-hover hover:text-fg lg:hidden"
           >
-            {menuOpen ? <XMarkIcon aria-hidden="true" className="h-5 w-5" /> : <Bars3Icon aria-hidden="true" className="h-5 w-5" />}
+            {menuOpen ? (
+              <XMarkIcon aria-hidden="true" className="h-5 w-5" />
+            ) : (
+              <Bars3Icon aria-hidden="true" className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
@@ -105,7 +133,10 @@ export function Header() {
         <div id="mobile-navigation" className="border-t border-line bg-surface lg:hidden">
           <form onSubmit={submit} role="search" className="border-b border-line p-4 md:hidden">
             <div className="relative">
-              <MagnifyingGlassIcon aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <MagnifyingGlassIcon
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+              />
               <input
                 type="search"
                 value={query}

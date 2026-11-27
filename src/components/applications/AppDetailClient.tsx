@@ -33,7 +33,9 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
           const query = details.name.split(" ")[0] ?? details.name;
           const page = await searchCatalogClient({ query, pageSize: 7, signal: controller.signal });
           if (!controller.signal.aborted) {
-            setRelated(page.items.filter((item) => item.packageName !== details.packageName).slice(0, 4));
+            setRelated(
+              page.items.filter((item) => item.packageName !== details.packageName).slice(0, 4),
+            );
           }
         } catch {
           // Related apps are optional.
@@ -49,20 +51,30 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
 
   if (error) {
     return (
-      <EmptyState
-        title={MESSAGES.app.notFoundTitle}
-        body={error}
-        icon="warning"
-        action={<Link href="/search" className="text-sm text-accent hover:underline">Back to search</Link>}
-      />
+      <>
+        <h1 className="sr-only">{MESSAGES.app.notFoundTitle}</h1>
+        <EmptyState
+          title={MESSAGES.app.notFoundTitle}
+          body={error}
+          icon="warning"
+          action={
+            <Link href="/search" className="text-sm text-accent hover:underline">
+              Back to search
+            </Link>
+          }
+        />
+      </>
     );
   }
 
   if (!app) {
     return (
-      <Panel as="div" className="flex items-center justify-center py-20">
-        <Spinner label="Loading application metadata…" />
-      </Panel>
+      <>
+        <h1 className="sr-only">Loading application</h1>
+        <Panel as="div" className="flex items-center justify-center py-20">
+          <Spinner label="Loading application metadata…" />
+        </Panel>
+      </>
     );
   }
 
@@ -74,7 +86,10 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/search/" className="inline-flex w-fit items-center gap-1 text-sm text-muted hover:text-accent">
+      <Link
+        href="/search/"
+        className="inline-flex w-fit items-center gap-1 text-sm text-muted hover:text-accent"
+      >
         <ChevronLeftIcon aria-hidden="true" className="h-4 w-4" /> Back to search
       </Link>
 
@@ -83,15 +98,25 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
           <AppIcon src={app.iconUrl} alt={app.name} size={96} />
           <div className="min-w-0 flex flex-1 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight text-fg sm:text-3xl">{app.name}</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+                {app.name}
+              </h1>
               {app.ageRating && <Badge>{app.ageRating}</Badge>}
               {app.hasExternalSource && <Badge tone="warning">External source</Badge>}
             </div>
             <p className="break-all font-mono text-xs text-muted">{app.packageName}</p>
             {app.developer && <p className="text-sm text-muted-strong">{app.developer}</p>}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
-              {app.versionName && <span>{MESSAGES.app.version}: {app.versionName}</span>}
-              {app.fileSizeBytes && <span>{MESSAGES.app.size}: {(app.fileSizeBytes / 1048576).toFixed(1)} MB</span>}
+              {app.versionName && (
+                <span>
+                  {MESSAGES.app.version}: {app.versionName}
+                </span>
+              )}
+              {app.fileSizeBytes && (
+                <span>
+                  {MESSAGES.app.size}: {(app.fileSizeBytes / 1048576).toFixed(1)} MB
+                </span>
+              )}
               {app.downloads !== null && (
                 <span title="Rounded total reported by RuStore">
                   {MESSAGES.app.downloads}: {formatCompactCount(app.downloads)}
@@ -113,7 +138,9 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
             </div>
           </div>
         </div>
-        {app.shortDescription && <p className="text-sm leading-relaxed text-muted-strong">{app.shortDescription}</p>}
+        {app.shortDescription && (
+          <p className="text-sm leading-relaxed text-muted-strong">{app.shortDescription}</p>
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -121,14 +148,18 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
           {app.fullDescription && (
             <Panel as="div">
               <h2 className="mb-3 text-base font-semibold text-fg">{MESSAGES.app.aboutApp}</h2>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-strong">{app.fullDescription}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-strong">
+                {app.fullDescription}
+              </p>
             </Panel>
           )}
 
           {app.whatsNew && (
             <Panel as="div">
               <h2 className="mb-3 text-base font-semibold text-fg">{MESSAGES.app.whatsNew}</h2>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-strong">{app.whatsNew}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-strong">
+                {app.whatsNew}
+              </p>
             </Panel>
           )}
 
@@ -166,7 +197,8 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
           <Panel as="div">
             <h2 className="mb-2 text-base font-semibold text-fg">{MESSAGES.app.source}</h2>
             <p className="text-xs leading-relaxed text-muted">
-              Metadata and files are provided by RuStore. RUSTERA does not host or modify application binaries.
+              Metadata and files are provided by RuStore. RUSTERA does not host or modify
+              application binaries.
             </p>
           </Panel>
         </aside>
@@ -174,9 +206,13 @@ export function AppDetailClient({ packageName }: { packageName: string }) {
 
       {related.length > 0 && (
         <section aria-labelledby="related-apps">
-          <h2 id="related-apps" className="mb-4 text-lg font-semibold text-fg">Related applications</h2>
+          <h2 id="related-apps" className="mb-4 text-lg font-semibold text-fg">
+            Related applications
+          </h2>
           <div className="flex flex-col gap-3">
-            {related.map((item) => <AppCard key={item.packageName} app={item} />)}
+            {related.map((item) => (
+              <AppCard key={item.packageName} app={item} />
+            ))}
           </div>
         </section>
       )}

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useLayoutEffect, useSyncExternalStore } from "react";
 import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { MESSAGES } from "@/lib/constants/messages";
+import { THEME_STORAGE_KEY } from "@/lib/constants/theme";
 
 const listeners = new Set<() => void>();
-const STORAGE_KEY = "rustera:theme";
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
@@ -21,13 +21,13 @@ function resolveTheme(): "dark" | "light" {
 }
 
 export function ThemeToggle() {
-  // The stored preference is applied in an effect so no inline bootstrap script
-  // is needed (and the CSP can stay strict). CSS media queries cover the flash
-  // before hydration for first-time visitors.
-  useEffect(() => {
+  // The initial theme is applied by the inline script in the root layout before
+  // paint. Re-apply it here because React Strict Mode resets <html> attributes
+  // on the development remount; no-op in production.
+  useLayoutEffect(() => {
     let stored: string | null = null;
     try {
-      stored = localStorage.getItem(STORAGE_KEY);
+      stored = localStorage.getItem(THEME_STORAGE_KEY);
     } catch {
       // Storage may be disabled.
     }
@@ -45,7 +45,7 @@ export function ThemeToggle() {
     node.classList.toggle("theme-light", next === "light");
     node.classList.toggle("theme-dark", next === "dark");
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Ignore storage errors.
     }
